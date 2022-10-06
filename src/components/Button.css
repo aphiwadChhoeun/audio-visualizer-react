@@ -1,0 +1,19 @@
+.button {
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    box-sizing: border-box;
+    aspect-ratio: 1/1;
+    padding: .8rem;
+    background: rgb(80, 80, 80);
+    border: none;
+    color: rgb(255, 255, 255);
+    transition: all .3s cubic-bezier(0.075, 0.82, 0.165, 1);
+}
+
+.button:hover {
+    transform: scale(1.1, 1.1);
+    transition: all .3s cubic-bezier(0.075, 0.82, 0.165, 1);
+}

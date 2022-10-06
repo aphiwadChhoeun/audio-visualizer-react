@@ -1,6 +1,22 @@
 export const PLAY_STATE = {
     PLAY: 'play',
-    PAUSE: 'pause'
+    PAUSE: 'pause',
+    END: 'end',
+    SEEKING: 'seeking'
+}
+
+export const SUBSCRIBE_EVENT = {
+    ANALYSER: 'analyser',
+    PLAYER: 'player'
+}
+
+export function normalizeData(data) {
+    const temp = [...data]
+    const processed = temp.map(item => {
+        return item / 255
+    })
+
+    return processed
 }
 
 export default class PlayerCore {
@@ -16,21 +32,35 @@ export default class PlayerCore {
         const bufferSize = this.analyser.frequencyBinCount
         this.dataArray = new Uint8Array(bufferSize)
 
-        const source = this.audioCtx.createMediaElementSource(this.audio)
-        source.connect(this.analyser)
+        this.source = this.audioCtx.createMediaElementSource(this.audio)
+        this.source.connect(this.analyser)
         this.analyser.connect(this.audioCtx.destination)
 
         this.audio.addEventListener('ended', () => {
-            console.log('ended')
             this.audio.currentTime = 0
+            cancelAnimationFrame(this.animationId)
+            this.callbacks.get(SUBSCRIBE_EVENT.ANALYSER).forEach(callback => {
+                callback.call(null, Array(this.dataArray.length).fill(0))
+            })
+            this.callbacks.get(SUBSCRIBE_EVENT.PLAYER).forEach(callback => {
+                callback.call(null, {
+                    state: PLAY_STATE.END
+                })
+            })
         })
 
         this.animationId = null
-        this.callbacks = []
+        this.callbacks = new Map()
+        this.callbacks.set(SUBSCRIBE_EVENT.ANALYSER, [])
+        this.callbacks.set(SUBSCRIBE_EVENT.PLAYER, [])
     }
 
-    subscribe(callback) {
-        this.callbacks.push(callback)
+    subscribe(event, callback) {
+        let temp = this.callbacks.get(event)
+        if (!temp) return
+
+        temp.push(callback)
+        this.callbacks.set(event, temp)
     }
 
     dispatch(type, payload = null) {
@@ -55,8 +85,6 @@ export default class PlayerCore {
     }
 
     pause() {
-        console.log(this.audioCtx.state)
-
         // if (this.audioCtx.state == 'runnings') {
         this.audio.pause()
         cancelAnimationFrame(this.animationId)
@@ -65,10 +93,25 @@ export default class PlayerCore {
 
     animate() {
         this.analyser.getByteFrequencyData(this.dataArray)
-        this.callbacks.forEach(callback => {
-            callback.call(null, this.dataArray)
+        this.callbacks.get(SUBSCRIBE_EVENT.ANALYSER).forEach(callback => {
+            callback.call(null, normalizeData(this.dataArray))
+        })
+        this.callbacks.get(SUBSCRIBE_EVENT.PLAYER).forEach(callback => {
+            callback.call(null, {
+                state: PLAY_STATE.SEEKING,
+                payload: {
+                    currentTime: this.audio.currentTime,
+                    duration: this.audio.duration
+                }
+            })
         })
 
         this.animationId = requestAnimationFrame(this.animate.bind(this))
+    }
+
+    async dispose() {
+        await this.audioCtx.close()
+        this.analyser.disconnect()
+        this.source.disconnect()
     }
 }

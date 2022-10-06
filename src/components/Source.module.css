@@ -1,0 +1,21 @@
+.container {
+    max-width: 450px;
+    height: 100%;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+}
+
+.container input {
+    display: none;
+}
+
+.filename {
+    width: 100%;
+    color: rgb(255, 255, 255);
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}

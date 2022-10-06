@@ -1,16 +1,18 @@
 .container {
+    top: 0; 
+    left: 0;
     position: fixed;
     width: 100vw;
     height: 100vh;
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-    gap: .1rem;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
+    pointer-events: none;
 }
 
 .bar {
-    width: 100%;
+    width: .25rem;
     border-radius: 4rem;
 }
